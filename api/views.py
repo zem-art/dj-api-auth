@@ -1,9 +1,12 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.models import Group, User
+from django.contrib.auth import authenticate
 from rest_framework.permissions import AllowAny
 from rest_framework import permissions, viewsets, status
 from rest_framework.response import Response
+from rest_framework.authtoken.models import Token
 from rest_framework.views import APIView
+from rest_framework.decorators import action
 from .serializers import GroupSerializer, UserSerializer, UserSerializateRegister
 
 # Create your views here.
@@ -16,7 +19,6 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-
 class GroupViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows groups to be viewed or edited.
@@ -24,9 +26,9 @@ class GroupViewSet(viewsets.ModelViewSet):
     queryset = Group.objects.all().order_by('name')
     serializer_class = GroupSerializer
     permission_classes = [permissions.IsAuthenticated]
-    
+
 class UserRegisterView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [AllowAny] # Mengizinkan akses tanpa autentikasi
 
     def post(self, request, *args, **kwargs):
         serializate = UserSerializateRegister(data=request.data)
@@ -40,3 +42,56 @@ class UserRegisterView(APIView):
             serializate.errors,
             status=status.HTTP_400_BAD_REQUEST
         )
+
+class UserRegisterViewSets(viewsets.ViewSet):
+    permission_classes = []
+
+    @action(detail=False, methods=['POST']) # DECORATOR
+    def sign_up(self, request, *args, **kwargs):
+        serializate = UserSerializateRegister(data=request.data)
+        if serializate.is_valid():
+            serializate.save()
+
+            return Response({
+                'title' : 'succeed',
+                'message': 'successfully registered user',
+                'data' : serializate.data,
+                }, status=status.HTTP_201_CREATED)
+        return Response({
+                'title' : 'failed',
+                'response' : serializate.errors,
+                'message' : '',
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['POST']) # DECORATOR
+    def sign_in(self, request, *args, **kwargs):
+
+        data = request.data
+        username = data['username']
+        password = data['password']
+        userAuth = authenticate(username=username, password=password)
+
+        if userAuth:
+            token, created = Token.objects.get_or_create(user = userAuth)
+            findUsers = get_object_or_404(User, username=username)
+            data_obj = {
+                'username' : findUsers.username,
+                'email' : findUsers.email,
+                'first_name' : findUsers.first_name,
+                'last_name' : findUsers.last_name,
+            }
+            
+            return Response({
+                'title' : 'succeed',
+                'message': 'successfully logged in',
+                'data' : {
+                        'info_user' : data_obj,
+                        'token' : token.key
+                    },
+                }, status=status.HTTP_200_OK)
+
+        return Response({
+                'title' : 'failed',
+                'message': 'Make sure the username and password are correct and also we cannot find an account with that data.',
+                'response' : userAuth,
+            }, status=status.HTTP_400_BAD_REQUEST)
