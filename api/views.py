@@ -48,6 +48,7 @@ class UserRegisterViewSets(viewsets.ViewSet):
 
     @action(detail=False, methods=['POST']) # DECORATOR
     def sign_up(self, request, *args, **kwargs):
+
         serializate = UserSerializateRegister(data=request.data)
         if serializate.is_valid():
             serializate.save()
@@ -66,9 +67,8 @@ class UserRegisterViewSets(viewsets.ViewSet):
     @action(detail=False, methods=['POST']) # DECORATOR
     def sign_in(self, request, *args, **kwargs):
 
-        data = request.data
-        username = data['username']
-        password = data['password']
+        username = request.data['username']
+        password = request.data['password']
         userAuth = authenticate(username=username, password=password)
 
         if userAuth:
@@ -95,3 +95,14 @@ class UserRegisterViewSets(viewsets.ViewSet):
                 'message': 'Make sure the username and password are correct and also we cannot find an account with that data.',
                 'response' : userAuth,
             }, status=status.HTTP_400_BAD_REQUEST)
+        
+    @action(detail=False, methods=['GET']) # DECORATOR
+    def profile(self, request, *args, **kwargs):
+        return Response({
+            'title' : 'succeed',
+            'message': 'successfully logged in',
+            'data' : {
+                    # 'info_user' : data_obj,
+                    # 'token' : token.key
+                },
+            }, status=status.HTTP_200_OK)
