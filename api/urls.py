@@ -1,5 +1,5 @@
 from django.urls import path, include
-from .views import UserViewSet, GroupViewSet, UserRegisterView, UserRegisterViewSets
+from .views import UserViewSet, GroupViewSet, UserRegisterView, UserViewSets
 from rest_framework.routers import DefaultRouter
 from rest_framework.authtoken.views import obtain_auth_token
 
@@ -9,7 +9,7 @@ app_name = 'api'
 router = DefaultRouter()
 router.register(r'users', UserViewSet, basename='user')
 router.register(r'groups', GroupViewSet, basename='group')
-router.register(r'authentications', UserRegisterViewSets, basename='authentication')
+router.register(r'authentications', UserViewSets, basename='authentication')
 
 urlpatterns = [
     path('', include(router.urls)),

@@ -43,7 +43,7 @@ class UserRegisterView(APIView):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-class UserRegisterViewSets(viewsets.ViewSet):
+class UserViewSets(viewsets.ViewSet):
     permission_classes = []
 
     @action(detail=False, methods=['POST']) # DECORATOR
