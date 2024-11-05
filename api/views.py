@@ -131,3 +131,20 @@ class UserViewSets(viewsets.ViewSet):
                 'title' : 'failed',
                 'message': findTokenUser.error,
                 }, status=status.HTTP_401_UNAUTHORIZED)
+        
+class UserViewSetJWT(viewsets.ViewSet):
+    permission_classes = []
+
+    @action(detail=False, methods=['POST']) # DECORATOR
+    def sign_in(self, request, *args, **kwargs):
+        data_obj = {}
+        token = ''
+
+        return Response({
+            'title' : 'succeed',
+            'message': 'successfully logged in',
+            'data' : {
+                    'info_user' : data_obj,
+                    'token' : token
+                },
+            }, status=status.HTTP_200_OK)
