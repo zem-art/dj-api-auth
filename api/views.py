@@ -98,8 +98,17 @@ class UserRegisterViewSets(viewsets.ViewSet):
         
     @action(detail=False, methods=['GET']) # DECORATOR
     def profile(self, request, *args, **kwargs):
-        headers = request.headers['Authorization']
-        token = headers.split(' ')[1]
+        auth_header  = request.headers.get('Authorization')
+
+        if not auth_header:
+            return Response({
+                        'title' : 'failed',
+                        'message': 'Authorization header is missing',
+                    },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        token = auth_header .split(' ')[1]
         findTokenUser = get_object_or_404(Token, key=token)
         if findTokenUser:
             findUser = get_object_or_404(User, id=findTokenUser.user_id)
