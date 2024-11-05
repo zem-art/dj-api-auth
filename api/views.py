@@ -98,11 +98,27 @@ class UserRegisterViewSets(viewsets.ViewSet):
         
     @action(detail=False, methods=['GET']) # DECORATOR
     def profile(self, request, *args, **kwargs):
+        headers = request.headers['Authorization']
+        token = headers.split(' ')[1]
+        findTokenUser = get_object_or_404(Token, key=token)
+        if findTokenUser:
+            findUser = get_object_or_404(User, id=findTokenUser.user_id)
+            data_obj = {
+                'username' : findUser.username,
+                'email' : findUser.email,
+                'first_name' : findUser.first_name,
+                'last_name' : findUser.last_name,
+            }
+
+            return Response({
+                'title' : 'succeed',
+                'message': 'successfully get user profile',
+                'data' : {
+                        'info_user' : data_obj,
+                        'token' : token,
+                    },
+                }, status=status.HTTP_200_OK)
         return Response({
-            'title' : 'succeed',
-            'message': 'successfully logged in',
-            'data' : {
-                    # 'info_user' : data_obj,
-                    # 'token' : token.key
-                },
-            }, status=status.HTTP_200_OK)
+                'title' : 'failed',
+                'message': findTokenUser.error,
+                }, status=status.HTTP_401_UNAUTHORIZED)
