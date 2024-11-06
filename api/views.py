@@ -137,14 +137,25 @@ class UserViewSetJWT(viewsets.ViewSet):
 
     @action(detail=False, methods=['POST']) # DECORATOR
     def sign_in(self, request, *args, **kwargs):
-        data_obj = {}
-        token = ''
+        username = request.data['username']
+        password = request.data['password']
+        userAuth = authenticate(username=username, password=password)
+        
+        if userAuth:
+            data_obj = {}
+            token = ''
 
+            return Response({
+                'title' : 'succeed',
+                'message': 'successfully logged in',
+                'data' : {
+                        'info_user' : data_obj,
+                        'token' : token
+                    },
+                }, status=status.HTTP_200_OK)
+        
         return Response({
-            'title' : 'succeed',
-            'message': 'successfully logged in',
-            'data' : {
-                    'info_user' : data_obj,
-                    'token' : token
-                },
-            }, status=status.HTTP_200_OK)
+                'title' : 'failed',
+                'message': 'Make sure the username and password are correct and also we cannot find an account with that data.',
+                'response' : userAuth,
+            }, status=status.HTTP_400_BAD_REQUEST)
