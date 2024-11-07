@@ -1,5 +1,6 @@
 from django.contrib.auth.models import Group, User
 from rest_framework import serializers
+from rest_framework_simplejwt.tokens import RefreshToken
 
 
 class UserSerializer(serializers.HyperlinkedModelSerializer):
@@ -29,3 +30,17 @@ class UserSerializateRegister(serializers.ModelSerializer):
         user.set_password(validated_data['password'])
         user.save()
         return user
+    
+class TokenSerializer(serializers.ModelSerializer):
+    token = serializers.SerializerMethodField()
+    class Meta:
+        model = User
+        fields = ('username', 'email', 'password')
+        
+    def get_token(self, user):
+        refresh  = RefreshToken.for_user(user)
+
+        return {
+            'access': str(refresh.access_token),
+            'refresh': str(refresh)   
+        }

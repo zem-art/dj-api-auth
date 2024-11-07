@@ -142,7 +142,13 @@ class UserViewSetJWT(viewsets.ViewSet):
         userAuth = authenticate(username=username, password=password)
         
         if userAuth:
-            data_obj = {}
+            findUsers = get_object_or_404(User, username=username)
+            data_obj = {
+                'username' : findUsers.username,
+                'email' : findUsers.email,
+                'first_name' : findUsers.first_name,
+                'last_name' : findUsers.last_name,
+            }
             token = ''
 
             return Response({
