@@ -138,7 +138,7 @@ REST_FRAMEWORK = {
     ],
 }
 
-# JWT AUTHENTICATION
+# JWT AUTHENTICATION WITH HS256
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
@@ -147,3 +147,21 @@ SIMPLE_JWT = {
     'ALGORITHM': 'HS256',
     'SIGNING_KEY': 'settings.SECRET_KEY',
 }
+
+# # JWT AUTHENTICATION WITH RS256
+# # Import RSA keys
+# import os
+# # Path to your private and public keys
+# PRIVATE_KEY_PATH = os.path.join(BASE_DIR, 'private.pem')
+# PUBLIC_KEY_PATH = os.path.join(BASE_DIR, 'public.pem')
+# # Load keys
+# with open(PRIVATE_KEY_PATH, 'r') as f:
+#     PRIVATE_KEY = f.read()
+# with open(PUBLIC_KEY_PATH, 'r') as f:
+#     PUBLIC_KEY = f.read()
+# # JWT Authentication settings
+# SIMPLE_JWT = {
+#     'ALGORITHM': 'RS256',  # Menggunakan algoritma RS256
+#     'SIGNING_KEY': PRIVATE_KEY,  # Kunci privat untuk signing
+#     'VERIFYING_KEY': PUBLIC_KEY,  # Kunci publik untuk verifikasi
+# }

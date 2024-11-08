@@ -10,8 +10,8 @@ app_name = 'api'
 router = DefaultRouter()
 router.register(r'users', UserViewSet, basename='user')
 router.register(r'groups', GroupViewSet, basename='group')
-router.register(r'auth', UserViewSets, basename='auth_view_set')
-router.register(r'auth/jwt', UserViewSetJWT, basename='auth_view_set_jwt')
+router.register(r'auth/view', UserViewSets, basename='auth_view_set')
+router.register(r'auth', UserViewSetJWT, basename='auth_jwt')
 
 urlpatterns = [
     path('', include(router.urls)),
@@ -21,4 +21,8 @@ urlpatterns = [
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('authentications/register/api_view', UserRegisterView.as_view(), name='auth_signup_api_view'),
     path('auth/', include('rest_framework.urls', namespace='rest_framework')),
+
+    # auth view jwt
+    path('auth/jwt/sign_in/', UserViewSetJWT.as_view({'post' : 'sign_in'}), name='sign_in'),
+    path('auth/jwt/profile/', UserViewSetJWT.as_view({'get' : 'profile'}), name='profile')
 ]
