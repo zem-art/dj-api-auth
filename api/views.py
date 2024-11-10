@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from rest_framework.views import APIView
 from rest_framework.decorators import action
-from .serializers import GroupSerializer, UserSerializer, UserSerializateRegister
+from .serializers import GroupSerializer, UserSerializer, UserSerializateRegister, TodoSerializate
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -22,6 +22,7 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+
 class GroupViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows groups to be viewed or edited.
@@ -29,6 +30,7 @@ class GroupViewSet(viewsets.ModelViewSet):
     queryset = Group.objects.all().order_by('name')
     serializer_class = GroupSerializer
     permission_classes = [permissions.IsAuthenticated]
+
 
 class UserRegisterView(APIView):
     permission_classes = [AllowAny] # Mengizinkan akses tanpa autentikasi
@@ -45,6 +47,7 @@ class UserRegisterView(APIView):
             serializate.errors,
             status=status.HTTP_400_BAD_REQUEST
         )
+
 
 class UserViewSets(viewsets.ViewSet):
     permission_classes = []
@@ -230,3 +233,34 @@ class UserViewSetJWT(viewsets.ViewSet):
                     'title' : 'failed',
                     'message': 'Token is invalid or expired'
                 }, status=status.HTTP_401_UNAUTHORIZED)
+            
+            
+class TodoViewSets(viewsets.ViewSet):
+    
+    permission_classes = [IsAuthenticated]
+    
+    def create(self, request, *args, **kwargs):
+        serializate = TodoSerializate(data=request.data)
+
+        if serializate.is_valid():
+            serializate.save()
+            return Response({
+                'title' : 'succeed',
+                'message': 'successfully create todo',
+                'data' : {},
+            }, status=status.HTTP_201_CREATED)
+        else:
+            return Response({
+                'title' : 'failed',
+                'message': 'failed create todo',
+                'data' : {
+                        'response' : serializate.error_messages
+                    },
+            }, status=status.HTTP_400_BAD_REQUEST)
+   
+    # def list(self, requset, *args, **kwargs):
+    #     # queryset = TodoSerializate.objects.all()
+    #     pass
+    
+    # def retrieve(self, request, *args, **kwargs):
+    #     pass
