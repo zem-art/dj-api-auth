@@ -7,10 +7,12 @@ from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from rest_framework.views import APIView
 from rest_framework.decorators import action
-from .serializers import GroupSerializer, UserSerializer, UserSerializateRegister, TodoSerializate
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework_simplejwt.views import TokenObtainPairView
+from .serializers import GroupSerializer, UserSerializer, UserSerializateRegister, TodoSerializate
+from .models import TodoModel
+from datetime import datetime
 
 # Create your views here.
 
@@ -236,7 +238,7 @@ class UserViewSetJWT(viewsets.ViewSet):
             
             
 class TodoViewSets(viewsets.ViewSet):
-    
+
     permission_classes = [IsAuthenticated]
     
     def create(self, request, *args, **kwargs):
@@ -247,7 +249,7 @@ class TodoViewSets(viewsets.ViewSet):
             return Response({
                 'title' : 'succeed',
                 'message': 'successfully create todo',
-                'data' : {},
+                'data' : serializate.data,
             }, status=status.HTTP_201_CREATED)
         else:
             return Response({
@@ -258,9 +260,29 @@ class TodoViewSets(viewsets.ViewSet):
                     },
             }, status=status.HTTP_400_BAD_REQUEST)
    
-    # def list(self, requset, *args, **kwargs):
-    #     # queryset = TodoSerializate.objects.all()
-    #     pass
+    def list(self, requset, *args, **kwargs):
+        """
+        - many=True on serializer is used to convert queryset into JSON format, so that all todo data can be displayed in the response.
+        """
+        queryset = TodoModel.objects.all().order_by('-created_at')
+        serializer_class = TodoSerializate(queryset, many=True)
+        array_push = []
+        for item in serializer_class.data:
+            created_at = datetime.strptime(item.get("created_at"), "%Y-%m-%dT%H:%M:%S.%fZ")
+            updated_at = datetime.strptime(item.get("updated_at"), "%Y-%m-%dT%H:%M:%S.%fZ")
+    
+            array_push.append({
+                "title": item.get("title"),
+                "description": item.get("description"),
+                "completed": item.get("completed"),
+                "created_at": created_at.strftime("%Y-%m-%d %H:%M:%S"),
+                "updated_at": updated_at.strftime("%Y-%m-%d %H:%M:%S"),
+            })
+        return Response({
+            'title' : 'succeed',
+            'message': 'successfully list all todos',
+            'data' : array_push,
+        }, status=status.HTTP_201_CREATED)
     
     # def retrieve(self, request, *args, **kwargs):
     #     pass

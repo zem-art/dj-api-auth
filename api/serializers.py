@@ -47,9 +47,9 @@ class TodoSerializate(serializers.ModelSerializer):
     class Meta:
         model = TodoModel
         fields = [
-            'id', 'uid', 'title',
-            'description', 'completed', 'created_at',
-            'updated_at',
+            'uid', 'title', 'description', 
+            'completed', 'created_at', 'updated_at',
+            'id',
         ]
 
     uid = serializers.CharField(read_only=True)
