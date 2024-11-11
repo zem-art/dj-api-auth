@@ -1,3 +1,5 @@
+from datetime import datetime
+from django.http import Http404
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.models import Group, User
 from django.contrib.auth import authenticate
@@ -12,7 +14,8 @@ from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .serializers import GroupSerializer, UserSerializer, UserSerializateRegister, TodoSerializate
 from .models import TodoModel
-from datetime import datetime
+from utils.pagination import CustomPageNumberPagination
+from utils.date import convert_datetime_format
 
 # Create your views here.
 
@@ -240,56 +243,94 @@ class UserViewSetJWT(viewsets.ViewSet):
 class TodoViewSets(viewsets.ViewSet):
 
     permission_classes = [IsAuthenticated]
-    
+
     def create(self, request, *args, **kwargs):
         serializate = TodoSerializate(data=request.data)
 
         if serializate.is_valid():
             serializate.save()
-            return Response({
+            custom_response = {
                 'title' : 'succeed',
                 'message': 'successfully create todo',
-                'data' : serializate.data,
-            }, status=status.HTTP_201_CREATED)
+                "status_code": 201,
+                'data' : {
+                    'uid' : serializate.data['uid'],
+                    'title' : serializate.data['title'],
+                    'description' : serializate.data['description'],
+                    'completed' : serializate.data['completed'],
+                    'created_at': convert_datetime_format(serializate.data['created_at']),
+                    'updated_at': convert_datetime_format(serializate.data['updated_at']),
+                }
+            }
+            return Response(custom_response, status=status.HTTP_201_CREATED)
         else:
             return Response({
                 'title' : 'failed',
+                "status_code": 400,
                 'message': 'failed create todo',
                 'data' : {
                         'response' : serializate.error_messages
                     },
             }, status=status.HTTP_400_BAD_REQUEST)
    
-    def list(self, requset, *args, **kwargs):
+    def list(self, request, *args, **kwargs):
         """
+        NOTE :
         - many=True on serializer is used to convert queryset into JSON format, so that all todo data can be displayed in the response.
         """
         queryset = TodoModel.objects.all().order_by('-created_at')
-        serializer_class = TodoSerializate(queryset, many=True)
+        # Inisialisasi pagination
+        paginator = CustomPageNumberPagination()
+
+        result_page = paginator.paginate_queryset(queryset, request)
+        serializer_class = TodoSerializate(result_page, many=True)
+
         array_push = []
         for item in serializer_class.data:
-            created_at = datetime.strptime(item.get("created_at"), "%Y-%m-%dT%H:%M:%S.%fZ")
-            updated_at = datetime.strptime(item.get("updated_at"), "%Y-%m-%dT%H:%M:%S.%fZ")
-    
+
             array_push.append({
                 'uid' : item.get("uid"),
                 'title': item.get("title"),
                 'description': item.get("description"),
                 'completed': item.get("completed"),
-                'created_at': created_at.strftime("%Y-%m-%d %H:%M:%S"),
-                'updated_at': updated_at.strftime("%Y-%m-%d %H:%M:%S"),
+                'created_at': convert_datetime_format(item.get('created_at')),
+                'updated_at': convert_datetime_format(item.get('updated_at')),
             })
+            
+        print(len(array_push))
         return Response({
             'title' : 'succeed',
+            "status_code": 200,
             'message': 'successfully list all todos',
             'data' : array_push,
         }, status=status.HTTP_200_OK)
     
     def retrieve(self, request, *args, **kwargs):
-        # params_uid = self.kwargs['uid']
-        # print(params_uid)
-        return Response({
-            'title' : 'succeed',
-            'message': 'successfully get todos',
-            # 'data' : array_push,
-        }, status=status.HTTP_200_OK)
+        params_uid = self.kwargs['uid']        
+
+        try:
+            todo_instance = get_object_or_404(TodoModel, uid=params_uid)
+            serializer = TodoSerializate(todo_instance)
+            custom_response = {
+                'title' : 'succeed',
+                'message': 'successfully get todos',
+                "error": "Not Found",
+                "status_code": 200,
+                'data' : {
+                    'uid' : serializer.data['uid'],
+                    'title' : serializer.data['title'],
+                    'description' : serializer.data['description'],
+                    'completed' : serializer.data['completed'],
+                    'created_at': convert_datetime_format(serializer.data['created_at']),
+                    'updated_at': convert_datetime_format(serializer.data['updated_at']),
+                }
+            }
+            return Response(custom_response, status=status.HTTP_200_OK)
+        except Http404:
+            custom_response = {
+                'title' : 'failed',
+                "status_code": 404,
+                "error": "Not Found",
+                "message": f"Data with UUID {params_uid} not found.",
+            }
+            return Response(custom_response, status=status.HTTP_404_NOT_FOUND)
