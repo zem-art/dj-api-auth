@@ -1,4 +1,4 @@
-from django.urls import path, include
+from django.urls import path, include, re_path
 from .views import UserViewSet, GroupViewSet, UserRegisterView, UserViewSets, UserViewSetJWT, TodoViewSets
 from rest_framework.routers import DefaultRouter
 from rest_framework.authtoken.views import obtain_auth_token
@@ -26,6 +26,7 @@ urlpatterns = [
     # auth view jwt
     path('auth/jwt/sign_in/', UserViewSetJWT.as_view({'post' : 'sign_in'}), name='sign_in'),
     path('auth/jwt/profile/', UserViewSetJWT.as_view({'get' : 'profile'}), name='profile'),
-    path('todos/create/', TodoViewSets.as_view({'post' : 'create'}), name='todos_create'),
-    path('todos/list/', TodoViewSets.as_view({'get' : 'list'}), name='todos_list'),
+    path('todo/create/', TodoViewSets.as_view({'post' : 'create'}), name='todo_create'),
+    path('todos/all/list/', TodoViewSets.as_view({'get' : 'list'}), name='todos_list'),
+    re_path(r'^todo/(?P<uid>[a-zA-Z0-9]+)/detail/$', TodoViewSets.as_view({'get' : 'retrieve'}), name='todo_retrieve'),
 ]

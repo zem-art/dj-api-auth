@@ -3,6 +3,7 @@ from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import TodoModel
 from utils.random import generate_random_string
+from utils.timestamp import get_timestamp_milliseconds
 
 
 class UserSerializer(serializers.HyperlinkedModelSerializer):
@@ -68,7 +69,7 @@ class TodoSerializate(serializers.ModelSerializer):
 
         ## data manipulation before saving
         if 'uid' not in validated_data:
-            validated_data['uid'] = generate_random_string(15)
+            validated_data['uid'] = f"{generate_random_string(5)}{get_timestamp_milliseconds()}"
 
         ## how to 1
         todo_instance = TodoModel.objects.create(**validated_data)

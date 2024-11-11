@@ -272,17 +272,24 @@ class TodoViewSets(viewsets.ViewSet):
             updated_at = datetime.strptime(item.get("updated_at"), "%Y-%m-%dT%H:%M:%S.%fZ")
     
             array_push.append({
-                "title": item.get("title"),
-                "description": item.get("description"),
-                "completed": item.get("completed"),
-                "created_at": created_at.strftime("%Y-%m-%d %H:%M:%S"),
-                "updated_at": updated_at.strftime("%Y-%m-%d %H:%M:%S"),
+                'uid' : item.get("uid"),
+                'title': item.get("title"),
+                'description': item.get("description"),
+                'completed': item.get("completed"),
+                'created_at': created_at.strftime("%Y-%m-%d %H:%M:%S"),
+                'updated_at': updated_at.strftime("%Y-%m-%d %H:%M:%S"),
             })
         return Response({
             'title' : 'succeed',
             'message': 'successfully list all todos',
             'data' : array_push,
-        }, status=status.HTTP_201_CREATED)
+        }, status=status.HTTP_200_OK)
     
-    # def retrieve(self, request, *args, **kwargs):
-    #     pass
+    def retrieve(self, request, *args, **kwargs):
+        # params_uid = self.kwargs['uid']
+        # print(params_uid)
+        return Response({
+            'title' : 'succeed',
+            'message': 'successfully get todos',
+            # 'data' : array_push,
+        }, status=status.HTTP_200_OK)
