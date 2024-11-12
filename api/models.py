@@ -10,7 +10,9 @@ class TodoModel(models.Model):
     completed = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+    deleted_flag = models.BooleanField(default=False, blank=True, null=True)
+    deleted_at = models.DateTimeField(blank=True, null=True)
+
     def __str__(self):
         return self.title
     

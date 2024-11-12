@@ -26,7 +26,9 @@ urlpatterns = [
     # auth view jwt
     path('auth/jwt/sign_in/', UserViewSetJWT.as_view({'post' : 'sign_in'}), name='sign_in'),
     path('auth/jwt/profile/', UserViewSetJWT.as_view({'get' : 'profile'}), name='profile'),
+    path('todo/all/list/', TodoViewSets.as_view({'get' : 'list'}), name='todos_list'),
     path('todo/create/', TodoViewSets.as_view({'post' : 'create'}), name='todo_create'),
-    path('todos/all/list/', TodoViewSets.as_view({'get' : 'list'}), name='todos_list'),
+    re_path(r'^todo/(?P<uid>[a-zA-Z0-9]+)/update/$', TodoViewSets.as_view({'put' : 'update'}), name='todo_update'),
     re_path(r'^todo/(?P<uid>[a-zA-Z0-9]+)/detail/$', TodoViewSets.as_view({'get' : 'retrieve'}), name='todo_retrieve'),
+    re_path(r'^todo/(?P<uid>[a-zA-Z0-9]+)/temporary/delete/$', TodoViewSets.as_view({'delete' : 'temporary_delete'}), name='todo_temporary_delete'),
 ]

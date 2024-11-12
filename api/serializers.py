@@ -50,7 +50,7 @@ class TodoSerializate(serializers.ModelSerializer):
         fields = [
             'uid', 'title', 'description', 
             'completed', 'created_at', 'updated_at',
-            'id',
+            'id', 'deleted_flag', 'deleted_at',
         ]
 
     uid = serializers.CharField(read_only=True)
