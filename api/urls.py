@@ -31,4 +31,5 @@ urlpatterns = [
     re_path(r'^todo/(?P<uid>[a-zA-Z0-9]+)/update/$', TodoViewSets.as_view({'put' : 'update'}), name='todo_update'),
     re_path(r'^todo/(?P<uid>[a-zA-Z0-9]+)/detail/$', TodoViewSets.as_view({'get' : 'retrieve'}), name='todo_retrieve'),
     re_path(r'^todo/(?P<uid>[a-zA-Z0-9]+)/temporary/delete/$', TodoViewSets.as_view({'delete' : 'temporary_delete'}), name='todo_temporary_delete'),
+    re_path(r'^todo/(?P<uid>[a-zA-Z0-9]+)/recovery/delete/$', TodoViewSets.as_view({'put' : 'recovery_delete'}), name='todo_recovery_delete'),
 ]

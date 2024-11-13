@@ -375,17 +375,7 @@ class TodoViewSets(viewsets.ViewSet):
         params_uid = self.kwargs['uid']
 
         try:
-            todo_instance = get_object_or_404(TodoModel, uid=params_uid)
-
-            if todo_instance.deleted_flag and todo_instance.deleted_at:
-                return response.create_custom_response(
-                    title='failed',
-                    message= f'Sorry, the data has been deleted, uid : {params_uid}',
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    error="Bad Request",
-                    data=None,
-                )
-
+            todo_instance = get_object_or_404(TodoModel, uid=params_uid, deleted_flag=False, deleted_at=None)
             request.data['deleted_flag'] = True
             request.data['deleted_at'] = datetime.now()
 
@@ -402,7 +392,34 @@ class TodoViewSets(viewsets.ViewSet):
         except Exception as err:
           return response.create_custom_response(
                 title='failed',
-                message='failed update todo',
+                message='failed delete todo',
+                status_code=status.HTTP_400_BAD_REQUEST,
+                error=str(err),
+                data=None,
+            )
+          
+    def recovery_delete(self, request, *args, **kwargs):
+        params_uid = self.kwargs['uid']
+
+        try:
+            todo_instance = get_object_or_404(TodoModel, uid=params_uid, deleted_flag=True)
+            request.data['deleted_flag'] = False
+            request.data['deleted_at'] = None
+
+            serializate = TodoSerializate(todo_instance, data=request.data, partial=True)
+            if serializate.is_valid():
+                serializate.save()
+                return response.create_custom_response(
+                    title='succeed',
+                    message= f'successfully recovery delete todos uid : {params_uid}',
+                    status_code=status.HTTP_200_OK,
+                    error=None,
+                    data=None,
+                )
+        except Exception as err:
+          return response.create_custom_response(
+                title='failed',
+                message='failed recovery delete todo',
                 status_code=status.HTTP_400_BAD_REQUEST,
                 error=str(err),
                 data=None,
