@@ -10,11 +10,19 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+import os
+import environ
 from pathlib import Path
 from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# state default enviroment
+env = environ.Env()
+
+# Take environment variables from .env file
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 
 # Quick-start development settings - unsuitable for production
@@ -166,3 +174,12 @@ SIMPLE_JWT = {
 #     'SIGNING_KEY': PRIVATE_KEY,  # Kunci privat untuk signing
 #     'VERIFYING_KEY': PUBLIC_KEY,  # Kunci publik untuk verifikasi
 # }
+
+"""
+    IMAGE UPLOAD WITH FIREBASE
+"""
+MAX_UPLOAD_SIZE_MB = 5 * 1024 * 1024  # 5 MB
+MAX_UPLOAD_SIZE_KB = 500 # KB
+FIREBASE_ADMIN_CERT = os.path.join(BASE_DIR, 'firebase', 'firebase.json')
+print(FIREBASE_ADMIN_CERT)
+FIREBASE_STORAGE_BUCKET = env('FIREBASE_STORAGE_BUCKET')

@@ -1,9 +1,11 @@
 from django.contrib.auth.models import Group, User
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
-from .models import TodoModel
+from .models import TodoModel, ImageTodoModel
 from utils.random import generate_random_string
 from utils.timestamp import get_timestamp_milliseconds
+from django.core.validators import URLValidator
+from django.core.exceptions import ValidationError
 
 
 class UserSerializer(serializers.HyperlinkedModelSerializer):
@@ -93,3 +95,34 @@ class TodoSerializate(serializers.ModelSerializer):
             setattr(instance, attr, value)
         instance.save()
         return instance
+    
+
+class ImageSerializate(serializers.ModelSerializer):
+    # todo = TodoSerializate(source='todo_id', read_only=True)
+
+    class Meta:
+        model = ImageTodoModel
+        fields = [
+            'uid', 'uid_todo', 'link_image_todo',
+            'created_at', 'updated_at', 'todo_id',
+        ]
+
+    link_image_todo = serializers.CharField()
+    uid = serializers.CharField(read_only=True)
+
+    def validate_link_image_todo(self, value):
+        validator = URLValidator()
+        try:
+            validator(value)
+        except ValidationError:
+            raise serializers.ValidationError("URL tidak valid.")
+        return value
+    
+    def create(self, validated_data):
+        ## data manipulation before saving
+        if 'uid' not in validated_data:
+            validated_data['uid'] = f"{generate_random_string(5)}{get_timestamp_milliseconds()}"
+
+        todo_instance = ImageTodoModel.objects.create(**validated_data)
+        return todo_instance
+    

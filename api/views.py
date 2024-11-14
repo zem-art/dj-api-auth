@@ -1,5 +1,8 @@
+import re
+import time
 from datetime import datetime
 from django.http import Http404
+from django.conf import settings
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.models import Group, User
 from django.contrib.auth import authenticate
@@ -12,9 +15,9 @@ from rest_framework.decorators import action
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework_simplejwt.views import TokenObtainPairView
-from .serializers import GroupSerializer, UserSerializer, UserSerializateRegister, TodoSerializate
+from .serializers import GroupSerializer, UserSerializer, UserSerializateRegister, TodoSerializate, ImageSerializate
 from .models import TodoModel
-from utils import date, pagination, random, response, timestamp
+from utils import date, pagination, random, response, timestamp, firebase_upload_image
 
 # Create your views here.
 
@@ -293,6 +296,7 @@ class TodoViewSets(viewsets.ViewSet):
                     'title': item.get("title"),
                     'description': item.get("description"),
                     'completed': item.get("completed"),
+                    'deleted_flag' : item.get("deleted_flag"),
                     'created_at': date.convert_datetime_format(item.get('created_at')),
                     'updated_at': date.convert_datetime_format(item.get('updated_at')),
                 })
@@ -371,6 +375,40 @@ class TodoViewSets(viewsets.ViewSet):
                 data=None
             )
           
+    def list_delete_todos(self, request, *args, **kwargs):
+        queryset = TodoModel.objects.filter(deleted_flag=True).order_by('-created_at')
+        # Inisialisasi pagination
+        paginator = pagination.CustomPageNumberPagination()
+
+        result_page = paginator.paginate_queryset(queryset, request)
+        serializer_class = TodoSerializate(result_page, many=True)
+
+        array_push = []
+        if len(serializer_class.data) > 0:
+            for item in serializer_class.data:
+
+                array_push.append({
+                    'uid' : item.get("uid"),
+                    'title': item.get("title"),
+                    'description': item.get("description"),
+                    'completed': item.get("completed"),
+                    'deleted_flag' : item.get("deleted_flag"),
+                    'created_at': date.convert_datetime_format(item.get('created_at')),
+                    'updated_at': date.convert_datetime_format(item.get('updated_at')),
+                    'deleted_at': date.convert_datetime_format(item.get('deleted_at')),
+                })
+
+        data = {
+            'list_todos' : array_push
+        }
+        return response.create_custom_response(
+            title='succeed',
+            message='successfully list all todos delete',
+            status_code=status.HTTP_200_OK,
+            error=None,
+            data=data
+        )
+    
     def temporary_delete(self, request, *args, **kwargs):
         params_uid = self.kwargs['uid']
 
@@ -423,4 +461,101 @@ class TodoViewSets(viewsets.ViewSet):
                 status_code=status.HTTP_400_BAD_REQUEST,
                 error=str(err),
                 data=None,
+            )
+    
+    def delete(self, request, *args, **kwargs):
+        params_uid = self.kwargs['uid']
+
+        try:
+            todo_instance = get_object_or_404(TodoModel, uid=params_uid, deleted_flag=True)
+            todo_instance.delete()
+            return response.create_custom_response(
+                    title='succeed',
+                    message= f'successfully delete todos uid : {params_uid}',
+                    status_code=status.HTTP_200_OK,
+                    error=None,
+                    data=None,
+                )
+        except Exception as err:
+          return response.create_custom_response(
+                title='failed',
+                message='failed delete todo',
+                status_code=status.HTTP_400_BAD_REQUEST,
+                error=str(err),
+                data=None,
+            )
+
+
+class ImageUploadTodo(viewsets.ViewSet):
+    permission_classes = []
+
+    def create(self, request, *args, **kwargs):
+
+        image_file = request.FILES.get('image')
+        uid = request.data['uid_todo']
+
+        try:
+            if not image_file:
+                return response.create_custom_response(
+                    title='failed',
+                    message='No image file provided.',
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    error='Not Found',
+                    data=None,
+                )
+
+            if image_file.size > settings.MAX_UPLOAD_SIZE_KB * 1024: # covert to KB
+                return response.create_custom_response(
+                    title='failed',
+                    message=f"Image size should not exceed {settings.MAX_UPLOAD_SIZE_KB} KB.", # in MB = settings.MAX_UPLOAD_SIZE_MB / (1024 * 1024)
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    error='Bad Request',
+                    data=None,
+                )
+
+            # Menambahkan timestamp pada nama file yang baru akan diupload
+            timestamp = int(time.time())
+            file_name, file_extension = image_file.name.rsplit('.', 1)
+
+            # Hapus karakter khusus dari file_name baru
+            clean_file_name = re.sub(r'[^A-Za-z0-9_]', '', file_name.upper())
+            new_image_name = f"{clean_file_name}-{timestamp}.{file_extension}"
+
+            firebase_uploader = firebase_upload_image.FirebaseImageUploader()
+            image_url = firebase_uploader.upload_image(image_file, f'images_api_todos/{new_image_name}')
+
+            todo_instance = get_object_or_404(TodoModel, uid=uid)
+            serializer_todo = TodoSerializate(todo_instance)
+            req_data = {
+                'uid_todo' : serializer_todo.data['uid'],
+                'link_image_todo' : image_url,
+                'todo_id' : serializer_todo.data['id'],
+            }
+            serializate = ImageSerializate(data=req_data)
+
+            if serializate.is_valid():
+                serializate.save()
+                resp = serializate.data
+                return response.create_custom_response(
+                    title='succeed',
+                    message='successfully upload image',
+                    status_code=status.HTTP_200_OK,
+                    error=None,
+                    data=resp
+                )
+            else:
+                return response.create_custom_response(
+                    title='failed',
+                    message='failed create todo',
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    error=serializate.error_messages,
+                    data=None
+                )
+        except Exception as err:
+          return response.create_custom_response(
+                title='failed',
+                message='failed upload image todo',
+                status_code=status.HTTP_400_BAD_REQUEST,
+                error=str(err),
+                data=None
             )
